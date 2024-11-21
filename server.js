@@ -7,7 +7,7 @@ app.use(bodyParser.json()) // req.body
 const PORT = process.env.PORT || 3000
 
 
-// Port 
+// Port is odne 
 app.listen(PORT, ()=>{
     console.log("Server is running ..")
 })
