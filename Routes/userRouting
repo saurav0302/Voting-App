@@ -11,12 +11,13 @@ router.post('/signup', async (req, res)=>{
 
         const data = req.body;
         const newUser = new User(data);
-        // only allow the one admin more then one admin is not possible 
-        const existingAdmin = await User.findOne({ role: 'admin' });
-
-        if (existingAdmin) {
-            // If an admin already exists, reject the request
-            return res.status(403).json({ message: 'We only allow one admin, an admin already exists.' });
+        // If the user wants to sign up as an admin, check if an admin already exists
+        if (newUser.role === 'admin') {
+            const existingAdmin = await User.findOne({ role: 'admin' });
+            if (existingAdmin) {
+                // If an admin already exists, reject the request
+                return res.status(403).json({ message: 'We only allow one admin, an admin already exists.' });
+            }
         }
         const response = await newUser.save();
 
