@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 // Create the schema for the user
 const userSchema = mongoose.Schema({
@@ -49,6 +50,41 @@ const userSchema = mongoose.Schema({
     default: false,
   }
 });
+
+// // Middleware which provides moongoose
+userSchema.pre('save',async function (next) {
+  this.updatedAt = Date.now();
+  const user = this;
+
+  // hash the password only if it has been  modified or(it is new) 
+  if(!user.isModified('password')) return next();
+  
+  try {
+      // hash salt
+      const salt = await bcrypt.genSalt(10);
+
+      // hash password
+      const hasedpassword = await bcrypt.hash(user.password, salt);
+
+      // override the plaintext to password 
+      user.password =  hasedpassword;
+      next();
+
+
+  } catch (error) {
+      return next(error);
+  }
+});
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+      // use becrypt to compare 
+      const isMatch = await bcrypt.compare(candidatePassword, this.password);
+      return isMatch;
+  } catch (error) {
+      throw error;
+  }
+}
 
 // Create the model from the schema
 const User = mongoose.model('User', userSchema);

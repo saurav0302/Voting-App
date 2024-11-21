@@ -1,0 +1,112 @@
+const express = require('express');
+const router = express.Router();
+const User = require('../Models/user');
+const {jwtAuthMiddleware, genrateToken} = require('./../jwt');
+
+
+// Post method with the person
+// save the data 
+router.post('/signup', async (req, res)=>{
+    try{
+
+        const data = req.body;
+        const newUser = new User(data);
+        // only allow the one admin more then one admin is not possible 
+        const existingAdmin = await User.findOne({ role: 'admin' });
+
+        if (existingAdmin) {
+            // If an admin already exists, reject the request
+            return res.status(403).json({ message: 'We only allow one admin, an admin already exists.' });
+        }
+        const response = await newUser.save();
+
+        const payload = {
+            id : response.id,
+        }
+        const token = genrateToken(payload);
+
+        console.log("Payload is " , payload)
+        console.log("Token is :" , token);
+        console.log("Data saved !");
+
+        res.status(200).json({response : response, token : token });
+
+    }
+    catch(err){
+        console.log(err);
+        res.status(500).json({err : 'Server side issues'});
+    }
+    
+})
+
+// Login 
+router.get('/login', async(req,res)=>{
+    try {
+        // Extract addharCardNumber and password from the req body
+        const {addharCardNumber , password} = req.body;
+
+        // Find the username 
+        const user = await User.findOne({addharCardNumber:addharCardNumber})
+
+        if(!user || !(await user.comparePassword(password))){
+            return res.status(401).json({error : 'Invalid username and password !'});
+        }
+
+        // Genrate token
+        const payload = {
+            id : user.id,
+        }
+
+        const token = genrateToken(payload);
+
+        res.status(200).json({token : token})
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({error : 'Server side issues'});
+    }
+
+})
+
+// PRofile 
+router.get('/profile', jwtAuthMiddleware ,async (req,res)=>{
+    try {
+        const userData = req.user;
+        const userID = userData.id;
+        const user = await User.findById(userID);
+        res.status(200).json(user);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({error : 'Server side issues'});
+    }
+
+})
+
+// Upadte the data 
+router.put('/profile/password', jwtAuthMiddleware,async (req, res)=>{
+    try {
+        const userID = req.user.id;
+        const{currentPassword, newPassword} = req.body
+
+        // Find user by id 
+        const user = await User.findById(userID)
+
+        if(!(await user.comparePassword(currentPassword))){
+            return res.status(401).json({error : 'Invalid username and password !'});
+        }
+        
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({message:'password is updated!'});
+        console.log('update is done !');
+
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({error : "Server side issues"});
+    }
+})
+
+
+module.exports = router;
