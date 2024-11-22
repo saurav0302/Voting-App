@@ -109,5 +109,37 @@ router.put('/profile/password', jwtAuthMiddleware,async (req, res)=>{
     }
 })
 
+// Check the who give the vote and Wdo don't 
+router.get('/voterstatus', async (req, res) => {
+    try {
+        // Find all the users
+        const users = await User.find();
+
+        // Filter users who have voted (positive array)
+        const positiveUser = users.filter((data) => data.isVoted === true).map((data) => {
+            return {
+                name: data.name,
+                voteStatus: data.isVoted
+            };
+        });
+
+        // Filter users who have not voted (negative array)
+        const negativeUser = users.filter((data) => data.isVoted === false).map((data) => {
+            return {
+                name: data.name,
+                voteStatus: data.isVoted
+            };
+        });
+
+        // Send both arrays in the response
+        return res.status(200).json({ positiveUser, negativeUser });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Server side error' });
+    }
+});
+
+
+
 
 module.exports = router;

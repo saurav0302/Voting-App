@@ -133,7 +133,6 @@ router.post('/vote/:candidateID', jwtAuthMiddleware, async(req,res)=>{
 
 
 // Vote Counting 
-
 router.get('/vote/count', async (req,res)=>{
     try {
         // Find all the candidates with the descending order
@@ -153,5 +152,6 @@ router.get('/vote/count', async (req,res)=>{
         res.status(500).json({error : 'server side error'})
     }
 })
+
 
 module.exports = router;
